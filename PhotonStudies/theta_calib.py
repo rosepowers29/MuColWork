@@ -133,7 +133,7 @@ files = [fFile_0_50, fFile_50_250, fFile_250_1000]
 #####################################
 
 corr_matrix = [] #for each theta bin, a list of avgs for each E bin
-
+'''
 for tbin in range(0, len(ThetaBins)-1):
     rmax = 0
     ThMin = ThetaBins[tbin]
@@ -195,7 +195,7 @@ with open('calibMap_unfiltered.csv', 'r') as csvToRead:
     corr_matrix = list(calibmap)
 
 
-'''
+
 
 cx = TCanvas("", "", 800, 600)
 gStyle.SetOptStat(1)
@@ -206,7 +206,7 @@ for Ebin in range(0, len(EBins)-1):
     proj_name = "E reso, "+str(EBins[Ebin])+"<E<"+str(EBins[Ebin+1])
     file_name = "Ereso"+str(Ebin)
     
-    h_my_proj_2 = TH1D(proj_name, proj_name, 150, -0.5, 0.5)
+    h_my_proj_2 = TH1D(proj_name, proj_name, 150, -1.5, 1.5)
     
     for file in files:
         tree = file.Get("photon_tree")
@@ -246,11 +246,11 @@ for Ebin in range(0, len(EBins)-1):
     lim = 0.0
     if EMin<3000.:
         if EMin<100:
-            gaussFit = TF1("gaussfit", "gaus", -1., 1.)
+            gaussFit = TF1("gaussfit", "gaus", -1.5, 1.5)
         elif EMin<500 and EMin>550:
-            gaussFit = TF1("gaussfit", "gaus", -.2, 0.2)
+            gaussFit = TF1("gaussfit", "gaus", -.5, 0.5)
         else:
-            gaussFit = TF1("gaussfit", "gaus", -0.1, 0.1)
+            gaussFit = TF1("gaussfit", "gaus", -0.2, 0.2)
         gaussFit.SetLineColor(kRed)
         gaussFit.SetParameter(1, 0.)
         gaussFit.SetParameter(2, h_my_proj_2.GetRMS())
