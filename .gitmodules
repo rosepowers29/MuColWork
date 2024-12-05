@@ -1,0 +1,3 @@
+[submodule "TauRecoDev"]
+	path = TauRecoDev
+	url = git@github.com:rosepowers88/MuColDev.git
