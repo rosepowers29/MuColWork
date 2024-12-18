@@ -12,13 +12,13 @@ import pandas as pd
 import mplhep as hep
 from matplotlib.ticker import (MultipleLocator, AutoMinorLocator)
 
-EBins = array('d', (0., 50., 100., 150., 200., 250., 300., 350., 400., 450., 500., 550., 600., 650., 700., 750., 800., 850., 900., 950., 1000.))
+EBins = array('d', (0., 50., 100., 150., 200., 250., 300., 350., 400., 450., 500., 550., 600., 650., 700., 750., 800.))#, 850., 900., 950., 1000.))
 EBins_lowE = array('d', (0., 50., 100., 150., 200., 250.))#, 30., 40., 50.))
 #ThetaBins = array('d', (20.*TMath.Pi()/180, 30.*TMath.Pi()/180., 40.*TMath.Pi()/180., 50.*TMath.Pi()/180., 60.*TMath.Pi()/180., 70.*TMath.Pi()/180., 90.*TMath.Pi()/180., 110.*TMath.Pi()/180., 120.*TMath.Pi()/180., 130.*TMath.Pi()/180., 140.*TMath.Pi()/180., 150.*TMath.Pi()/180., 160*TMath.Pi()/180))
 ThetaBins = np.linspace(0.175,2.96,30)
 
 
-with open('calibMap_PFOs.csv', 'r') as csvToRead:
+with open('responseMap_BIBPFOs_reco.csv', 'r') as csvToRead:
     calibmap=csv.reader(csvToRead)
     corr_matrix = list(calibmap)
 
@@ -37,12 +37,12 @@ fig, ax = plt.subplots()
 
 
 #plot with pcolormesh
-mesh = ax.pcolormesh(EBins, ThetaBins, corr_map,cmap = plt.cm.plasma, norm=mpl.colors.LogNorm(vmin=np.min(corr_map), vmax=np.max(corr_map)))
+mesh = ax.pcolormesh(EBins, ThetaBins, corr_map,cmap = plt.cm.plasma, vmin = np.min(corr_map), vmax = np.max(corr_map))#norm=mpl.colors.LogNorm(vmin=np.min(corr_map), vmax=np.max(corr_map)))
 cbar = fig.colorbar(mesh)
 cbar.set_label(label="$E_{true}/E_{reco}$",loc='top' )
 
-plt.xlabel("True E [GeV]", loc='right')
-plt.ylabel("True Theta [rad]", loc='top')
+plt.xlabel("Reconstructed E [GeV]", loc='right')
+plt.ylabel("Reconstructed $\\theta$ [rad]", loc='top')
 #use mplhep for labels
 hep.cms.label(exp = "Muon Collider", data = False, 
        rlabel='$MAIA$ Detector Concept', loc=0, italic=(1,0,0), pad=(0.0))
@@ -61,5 +61,6 @@ ax.yaxis.set_major_locator(MultipleLocator(0.5))
 ax.yaxis.set_major_formatter('{x:.1f}')
 ax.yaxis.set_minor_locator(MultipleLocator(0.1))
 #hep.cms.label(exp = "Muon Collider", data = False, rlabel = "MAIA Detector Concept", loc=0, italic=(1,0,0))
-plt.savefig('calibmap_PFOs.pdf')
+plt.savefig('responseMap_recoPFOs_BIB.pdf')
+print("Created file 'responseMap_recoPFOs_BIB.pdf'")
 plt.close()

@@ -29,12 +29,16 @@ parser.add_option("-n", "--inFile_50_250_10T", dest='inFile_50_250_10T',
 parser.add_option("-o", "--inFile_250_1000_10T", dest='inFile_250_1000_10T',
                  default="histos_photon.root", help="Name of the ROOT file")
 
+#parser.add_option("-p", "--inFile_250_1000_10T_2", dest = 'inFile_250_1000_10T_2',
+#                 default = "histos_photon.root", help="Name of the ROOT file")
+
 (options, args) = parser.parse_args()
 
 #load files -- the slices
 fFile_0_50 = TFile(options.inFile_0_50_10T, "READ")
 fFile_50_250 = TFile(options.inFile_50_250_10T, "READ")
 fFile_250_1000 = TFile(options.inFile_250_1000_10T, "READ")
+#fFile_250_1000_2 = TFile(options.inFile_250_1000_10T_2, "READ")
 
 
 #this is not really useful
@@ -56,7 +60,7 @@ gStyle.SetPadTickY(1)
 ################################
 
 # Energy binning (EPJC style), angular binning
-EBins = array('d', (0., 50., 100., 150., 200., 250., 300., 350., 400., 450., 500., 550., 600., 650., 700., 750., 800., 850., 900., 950., 1000.))
+EBins = array('d', (30., 50., 100., 150., 200., 250., 300., 350., 400., 450., 500., 550., 600., 650., 700., 750., 800., 850., 900., 950., 1000.))
 EBins_lowE = array('d', (10.,15., 20., 25.,30.,35., 40.,45., 50.))
 #ThetaBins = array('d', (20.*TMath.Pi()/180, 30.*TMath.Pi()/180., 40.*TMath.Pi()/180., 50.*TMath.Pi()/180., 60.*TMath.Pi()/180., 70.*TMath.Pi()/180., 90.*TMath.Pi()/180., 110.*TMath.Pi()/180., 120.*TMath.Pi()/180., 130.*TMath.Pi()/180., 140.*TMath.Pi()/180., 150.*TMath.Pi()/180., 160*TMath.Pi()/180))
 ThetaBins = np.linspace(0.175,2.96,30)
@@ -104,7 +108,7 @@ def corr_ratio(x,A):
 '''
 
 #get files
-files = [fFile_0_50, fFile_50_250, fFile_250_1000]
+files = [fFile_0_50, fFile_50_250, fFile_250_1000]#, fFile_250_1000_2]
 
 
 #####################################
@@ -127,13 +131,13 @@ for tbin in range(0, len(ThetaBins)-1):
         EMax = EBins[Ebin+1]
         ratios = []
         for file in files:
-            tree = file.Get("photon_tree")
-            #tree = file.Get("jet_tree")
+            #tree = file.Get("photon_tree")
+            tree = file.Get("jet_tree")
             for entry in tree:
-                E_truth = entry.E_truth #entry.photon_E
-                theta = entry.theta_truth #photon_theta_angle
-                E_reco = entry.E #jet_energy
-                theta_reco = entry.theta #jet_theta
+                E_truth = entry.photon_theta
+                theta = entry.photon_theta_angle
+                E_reco = entry.jet_energy
+                theta_reco = entry.jet_theta
                 #get rid of weird theta values
                 if theta_reco < 0:
                     continue
@@ -146,8 +150,8 @@ for tbin in range(0, len(ThetaBins)-1):
                 #if file == fFile_250_1000 and E_reco < 100:
                 #    continue
                 #finally, dump the ratio into a list
-                if EMin <= E_truth and E_truth < EMax:
-                    if ThMin <= theta and theta < ThMax:
+                if EMin <= E_reco and E_reco < EMax:
+                    if ThMin <= theta_reco and theta_reco < ThMax:
                         ratios.append(E_truth/E_reco)
         if len(ratios) > 0:
             avg_ratio = np.average(ratios)
@@ -168,7 +172,7 @@ with open('calibMap_PFOs', 'w', newline = '') as csvfile:
 #after initial calibrtion, read in the csv file and just pull values from there
 # have block below uncommented if reading in file: corr_matrix will be defined differently
 '''
-with open('calibMap_jets.csv', 'r') as csvToRead:
+with open('calibMap_PFOs_reco.csv', 'r') as csvToRead:
     calibmap=csv.reader(csvToRead)
     corr_matrix = list(calibmap)
 
@@ -207,16 +211,16 @@ print("calibmap done")
 
 cx = TCanvas("", "", 800, 600)
 gStyle.SetOptStat(1)
-
-for Ebin in range(0, len(EBins_lowE)-1):
-    EMin = EBins_lowE[Ebin]
-    EMax = EBins_lowE[Ebin+1]
-    proj_name = "E reso, "+str(EBins_lowE[Ebin])+"<E<"+str(EBins_lowE[Ebin+1])
+'''
+for Ebin in range(0, len(EBins)-1):
+    EMin = EBins[Ebin]
+    EMax = EBins[Ebin+1]
+    proj_name = "E reso, "+str(EBins[Ebin])+"<E<"+str(EBins[Ebin+1])
     file_name = "Ereso"+str(Ebin)
-    if EMin < 50:
-        h_my_proj_2 = TH1D(proj_name, proj_name, 50, -5., 5.)
-    elif 50<= EMin < 200.:
+    if EMin < 200:
         h_my_proj_2 = TH1D(proj_name, proj_name, 50, -.5, .5)
+    elif 200<= EMin < 400.:
+        h_my_proj_2 = TH1D(proj_name, proj_name, 50, -.2, .2)
     #elif EMin >= 50 and EMin < 150:
     #    h_my_proj_2 = TH1D(proj_name, proj_name, 150, -1., 1.)
     #elif EMin >=150 and EMin < 500:
@@ -227,8 +231,10 @@ for Ebin in range(0, len(EBins_lowE)-1):
     #    h_my_proj_2 = TH1D(proj_name, proj_name, 150, -.1, 0.1)
     #if EMin < 300:
     #    h_my_proj_2 = TH1D(proj_name, proj_name, 50, -1., 0.)
+    elif EMin > 800:
+        h_my_proj_1 = TH1D(proj_name, proj_name, 50, -.2, 0.)
     else:
-        h_my_proj_2 = TH1D(proj_name, proj_name, 50, -.2, 0.2)
+        h_my_proj_2 = TH1D(proj_name, proj_name, 50, -.1, 0.1)
     #else:
     #    h_my_proj_2 = TH1D(proj_name, proj_name, 50, -1., -0.8)
 
@@ -263,50 +269,20 @@ for Ebin in range(0, len(EBins_lowE)-1):
                 ThMin = ThetaBins[tbin]
                 ThMax = ThetaBins[tbin+1]
                 #get corr factor from profile
-                corr = float(corr_matrix[tbin][0])
+                corr = float(corr_matrix[tbin][Ebin])
                 #if entry is in the 2d bin, correct energy
-                if EMin <= E_truth and E_truth < EMax:
-                    if ThMin <= theta and theta < ThMax:
+                if EMin <= E_reco and E_reco < EMax:
+                    if ThMin <= theta_reco and theta_reco < ThMax:
                         #if corr > 0:
                         E_corr = E_reco * corr
                         #isolate the peak of the distribution so we can fit a Gaussian
                         #BIB limits
-                        '''
-                        if EMin < 150:
-                            neg_lim = -2.
-                            pos_lim = 1.
-                        elif 150<=EMin < 300:
-                            neg_lim = -2.5
-                            pos_lim = -0.5
+                        if 250. <= EMin < 400:
+                            neg_lim = -0.02
+                            pos_lim = 0.05
                         else:
-                            neg_lim = -1.
-                            pos_lim = -0.8
-                        '''
-                        ''' 
-                        if 50>EMin:
-                            neg_lim = -.5
-                            pos_lim = .5
-                        elif 50 <= EMin < 100:
-                            neg_lim = -0.4
-                            pos_lim = 0.4
-                        elif 100<= EMin < 200:
-                            neg_lim = -0.3
-                            pos_lim = 0.3
-                        elif 200 <=EMin < 300:
-                            neg_lim = -0.25
-                            pos_lim = 0.25
-                        elif 300 <= EMin < 450:
-                            neg_lim = -0.2
-                            pos_lim = 0.2
-                        elif 450<= EMin < 600:
-                            neg_lim = -0.15
-                            pos_lim = 0.15
-                        else:
-                            neg_lim = -0.1
-                            pos_lim = 0.1
-                        '''
-                        neg_lim = -10.
-                        pos_lim = 10.
+                            neg_lim = -10.
+                            pos_lim = 10.
                         #print((E_corr - E_truth)/E_truth)
                         if (E_corr - E_truth)/E_truth > neg_lim and (E_corr - E_truth)/E_truth < pos_lim:
                             h_my_proj_2.Fill((E_corr - E_truth)/E_truth)
@@ -316,7 +292,7 @@ for Ebin in range(0, len(EBins_lowE)-1):
 
     #now start fitting the gaussians
     lim = 0.0
-    if EMin<50:
+    if EMin<50000:
         if EMin<400:
             gaussFit1 = TF1("gaussfit", "gaus", -1., 1.)
         #else:
@@ -346,8 +322,9 @@ for Ebin in range(0, len(EBins_lowE)-1):
         #print(h1_reso_E.GetBinCenter(bin+1))
         sigma_err_arr.append(sigma_err)
 
-#unfinished theta scan
 '''
+# theta scan
+
 
 for Tbin in range(0, len(ThetaBins)-1):
     ThMin = ThetaBins[Tbin]
@@ -369,7 +346,7 @@ for Tbin in range(0, len(ThetaBins)-1):
     #else:
     #    h_my_proj_2 = TH1D(proj_name, proj_name, 150, -1., -0.8)
 
-    h_my_proj_2 = TH1D(proj_name, proj_name, 150,-.2,.2)
+    h_my_proj_2 = TH1D(proj_name, proj_name, 50,-.5,.5)
 
     for file in files:
         #tree = file.Get("jet_tree")
@@ -387,6 +364,7 @@ for Tbin in range(0, len(ThetaBins)-1):
             if theta_reco < 0:
                 continue
             # get rid of negative energy values, restrict range
+            #only include the energy plateau
             if E_truth < 600.:
                 continue
             if E_reco < 5.:
@@ -397,31 +375,13 @@ for Tbin in range(0, len(ThetaBins)-1):
                 #get corr factor from profile
                 corr = float(corr_matrix[Tbin][Ebin])
                 #if entry is in the 2d bin, correct energy
-                if EMin <= E_truth and E_truth < EMax:
-                    if ThMin <= theta and theta < ThMax:
+                if EMin <= E_reco and E_reco < EMax:
+                    if ThMin <= theta_reco and theta_reco < ThMax:
                         #if corr > 0:
                         E_corr = E_reco * corr
                         #isolate the peak of the distribution so we can fit a Gaussian
                         neg_lim = -4.
                         pos_lim = 4.
-
-                        
-                        if 100>EMin:
-                            neg_lim = -.5
-                            pos_lim = .5
-                        elif 50 <= EMin <= 150:
-                            neg_lim = -0.4
-                            pos_lim = 0.4
-                        elif 150< EMin < 300:
-                            neg_lim = -0.3
-                            pos_lim = 0.3
-                        elif 300 <=EMin < 550:
-                            neg_lim = -0.2
-                            pos_lim = 0.2
-                        else:
-                            neg_lim = -0.1
-                            pos_lim = 0.1
-                        
                         #print((E_corr - E_truth)/E_truth)
                         if (E_corr - E_truth)/E_truth > neg_lim and (E_corr - E_truth)/E_truth < pos_lim:
                             h_my_proj_2.Fill((E_corr - E_truth)/E_truth)
@@ -462,94 +422,8 @@ for Tbin in range(0, len(ThetaBins)-1):
         sigma_err_arr.append(sigma_err)
 
 
-'''
-'''
-#uncomment for theta resolution studies
-
-for bin in range(0,len(ThetaBins)-1):
-    minTh = ThetaBins[bin]
-    maxTh = ThetaBins[bin+1]
-
-    proj_name = "E reso, "+str(round(ThetaBins[bin],3))+"<Theta<"+str(round(ThetaBins[bin+1],3))
-    print(proj_name)
-    #adjust bin range so we don't underbin
-    binrange = 1.5
-    #if ThetaBins[bin]< 10.0:
-        #binrange = 1.5
-    #elif ThetaBins[bin]<70.0:
-        #binrange = 1.
-   # else:
-        #binrange = 0.5
-    h_my_proj_2 = TH1D(proj_name, proj_name, 150, -binrange, binrange)
-
-    for file in files:
-        tree = file.Get("photon_tree")
-        for entry in tree:
-            E_truth = entry.E_truth
-            E_reco = entry.E
-            theta = entry.theta
-            
-
-            if correctEnergy: 
-                E_reco = E_corr(E_reco, theta)
-            #h_response_profile_E.Fill(E_truth, (E_truth-E_reco)/E_truth)
-            #h_response_profile_th.Fill(theta, (E_truth-E_reco)/E_truth)
-            if E_reco > 0:
-                #if(entry.theta > 0.65 and  entry.theta < 1.01) or (entry.theta > 2.13 and entry.theta <2.53): #if entry.theta < 0.612:
-                #if theta >1.01 and theta < 2.13:
-                if (E_truth > minE) and (E_truth < maxE):
-                    if (E_reco - E_truth)/E_truth > -0.9:
-                        h_my_proj_2.Fill((E_reco - E_truth)/E_truth)
 
 
-    #lim = 0.0
-    #if minE<5000:
-     #   if minE<50:
-    lim = 0.5
-      #  else:
-       #     lim = 0.25
-    gaussFit = TF1("gaussfit", "gaus", -1.0*lim, lim)
-    gaussFit.SetLineColor(kBlue)
-    gaussFit.SetParameter(1, 0.)
-    gaussFit.SetParameter(2, h_my_proj_2.GetRMS())
-    h_my_proj_2.Fit(gaussFit, "E")
-    gStyle.SetOptFit(0o111);
-    h_my_proj_2.Draw("HIST")
-    gaussFit.Draw("LSAME")
-    cx.SaveAs("slices_ph/"+proj_name+".pdf")
-    sigma = gaussFit.GetParameter(2)
-    sigma_err = gaussFit.GetParError(2)
-    if bin > 0:
-        bincenter = (maxTh-minTh)/2
-        th_arr.append(h_reso_theta.GetBinCenter(bin+1))
-        th_err_arr.append(bincenter)
-        sigma_arr_th.append(sigma)
-        mu_arr_th.append(gaussFit.GetParameter(1))
-        mu_arr_th_err.append(gaussFit.GetParError(1))
-        print("SIGMA=",sigma)
-        #print(h1_reso_E.GetBinCenter(bin+1))
-        sigma_err_arr_th.append(sigma_err)
-    else:
-        gaussFit = TF1("gaussfit", "gaus", -0.15, 0.15)
-        gaussFit.SetLineColor(kBlue)
-        gaussFit.SetParameter(1, 0.)
-        gaussFit.SetParameter(2, h_my_proj_2.GetRMS())
-        h_my_proj_2.Fit(gaussFit, "E")
-        h_my_proj_2.Draw("HIST")
-        gaussFit.Draw("LSAME")
-        cx.SaveAs("slices"+proj_name+".pdf")
-        sigma = gaussFit.GetParameter(2)
-        sigma_err = gaussFit.GetParError(2)
-        if bin > 0:
-            th_arr.append(h_reso_theta.GetBinCenter(bin+1))
-            th_err_arr.append(maxTh-minTh)
-            sigma_arr_th.append(sigma)
-            sigma_err_arr_th.append(sigma_err)
-            mu_arr_th.append(gaussFit.GetParameter(1))
-            mu_arr_th_err.append(gaussFit.GetParError(1))
-            
-     
-'''
 #declare the graphs
 gr_reso_E = TGraphErrors(len(e_arr), e_arr, sigma_arr, e_err_arr, sigma_err_arr)
 #gr_reso_Th = TGraphErrors(len(th_arr), th_arr, sigma_arr_th,th_err_arr, sigma_err_arr_th)
@@ -557,7 +431,7 @@ gr_reso_E = TGraphErrors(len(e_arr), e_arr, sigma_arr, e_err_arr, sigma_err_arr)
 #gr_response_Th = TGraphErrors(len(th_arr), th_arr, mu_arr_th, th_err_arr, mu_arr_th_err)
 
 
-'''
+
 print("E:", e_arr)
 print("sigma:", sigma_arr)
 print("sig error:", sigma_err_arr)
@@ -568,7 +442,7 @@ plt.xlabel("Theta [rad]")
 plt.ylabel("Resolution")
 plt.savefig("PFOcorrected_theta_reso.pdf")
 
-'''
+
 cE1=TCanvas("", "", 800, 600)
 gr_reso_E.SetTitle(" ")
 gr_reso_E.GetYaxis().SetTitle("Jet #sigma_{E}/E")
@@ -583,13 +457,13 @@ cE1.Update()
 
 #ROOT fit
 
-resoFit = TF1(    "resofit", "sqrt([0]*[0]/x+[1]*[1]/(x*x)+[2]*[2])", 0., 50., 3)
+resoFit = TF1(    "resofit", "sqrt([0]*[0]/x+[1]*[1]/(x*x)+[2]*[2])", 30., 1000., 3)
 resoFit.SetLineColor(kBlue)
 resoFit.SetParName(0, "Stochastic")
 resoFit.SetParName(1, "Noise")
 resoFit.SetParName(2, "Constant")
 resoFit.SetParameter(0, 0.5)
-resoFit.SetParameter(1, 0.)
+resoFit.FixParameter(1, 0.)
 resoFit.SetParameter(2, 0.)
 gStyle.SetOptFit(0)
 gr_reso_E.Fit(resoFit)
@@ -600,14 +474,14 @@ resoFit.Draw("LSAME")
 #gr_reso_E.SaveAs("Ereso_gr_th.root")
 #resoFit.SaveAs("Ereso_fit_th.root")
 cE1.Update()
-cE1.SaveAs("Ereso_endcap_finegrain_matrixcorr.root")
+cE1.SaveAs("Ereso_endcap_matrixcorr.root")
 
 
 
 #MAIA format python plots (!!)
-###############RESO PLOT IN PAPER GENERATED WITH THE BELOW####################
-
+#not actually used anymore -- just the skeleton of how we do it
 #redefine the fit function
+'''
 def py_resofit(stoch, noise, const, E):
     return np.sqrt((stoch**2)/E+(noise/E)**2+const**2)
 
@@ -621,17 +495,17 @@ print("sigma:", sigma_arr)
 print("sig error:", sigma_err_arr)
 print("E error:", e_err_arr)
 print("stoch:", resoFit.GetParameter(0), ", noise:", resoFit.GetParameter(1), ", const:", resoFit.GetParameter(2))
-plt.errorbar(e_arr, sigma_arr, yerr = sigma_err_arr, xerr = e_err_arr, fmt=".", color='blue')
+plt.errorbar(e_arr, sigma_arr, yerr = sigma_err_arr, xerr = e_err_arr, fmt=".", color='red')
 plt.plot(Epoints, resopoints,'--', c='blue', label="Fit")
 plt.ylim(0,0.14)
 plt.xlabel("True Photon Energy [GeV]")
 plt.ylabel("Photon Jet Energy Resolution $\sigma/E$")
 hep.cms.label(exp = "Muon Collider", data = False, rlabel = "MAIA Detector Concept", loc=0, italic=(1,0,0))
 plt.show()
-plt.savefig("Ereso_EE_maia_PFOS_finegrain.pdf")
+plt.savefig("Ereso_EE_maia_PFOS_BIB.pdf")
 plt.close()
 
-'''
+
 
 cE2=TCanvas("", "", 800, 600)
 #gr_response_E.SetTitle(" ")
