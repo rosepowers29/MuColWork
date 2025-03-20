@@ -18,7 +18,7 @@ EBins_lowE = array('d', (0., 50., 100., 150., 200., 250.))#, 30., 40., 50.))
 ThetaBins = np.linspace(0.175,2.96,30)
 
 
-with open('responseMap_v2_BIB_cc.csv', 'r') as csvToRead:
+with open('responseMap_v2_noBIB_cc.csv', 'r') as csvToRead:
     calibmap=csv.reader(csvToRead)
     corr_matrix = list(calibmap)
 csvToRead.close()
@@ -38,7 +38,7 @@ fig, ax = plt.subplots()
 #print(len(EBins))
 #print(len(corr_map[5]))
 #plot with pcolormesh
-mesh = ax.pcolormesh(EBins, ThetaBins, corr_map,cmap = plt.cm.hsv, vmin = np.min(corr_map), vmax = np.max(corr_map))#norm=mpl.colors.LogNorm(vmin=np.min(corr_map), vmax=np.max(corr_map)))
+mesh = ax.pcolormesh(EBins, ThetaBins, corr_map,cmap = plt.cm.plasma, vmin = np.min(corr_map), vmax = np.max(corr_map))#norm=mpl.colors.LogNorm(vmin=np.min(corr_map), vmax=np.max(corr_map)))
 cbar = fig.colorbar(mesh)
 cbar.set_label(label="$E_{true}/E_{reco}$",loc='top' )
 
@@ -62,6 +62,6 @@ ax.yaxis.set_major_locator(MultipleLocator(0.5))
 ax.yaxis.set_major_formatter('{x:.1f}')
 ax.yaxis.set_minor_locator(MultipleLocator(0.1))
 #hep.cms.label(exp = "Muon Collider", data = False, rlabel = "MAIA Detector Concept", loc=0, italic=(1,0,0))
-plt.savefig('responseMap_BIB_cc_v08v2.pdf')
-print("Created file 'responseMap_BIB_cc_v08v2.pdf'")
+plt.savefig('responseMap_noBIB_cc_v08v2.pdf')
+print("Created file 'responseMap_noBIB_cc_v08v2.pdf'")
 plt.close()
