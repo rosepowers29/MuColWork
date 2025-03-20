@@ -40,7 +40,7 @@ fFile_250_1000 = TFile(options.inFile_250_1000_10T, "READ")
 
 
 # Energy binning (EPJC style), angular binning
-EBins = array('d', (0., 50., 100., 150., 200., 250., 300., 350., 400., 450., 500., 550., 600., 650., 700., 750., 800.))#, 850., 900., 950., 1000.))
+EBins = array('d', (30., 50., 100., 150., 200., 250., 300., 350., 400., 450., 500., 550., 600., 650., 700., 750., 800.))#, 850., 900., 950., 1000.))
 EBins_lowE = array('d', (10.,15., 20., 25.,30.,35., 40.,45., 50.))
 #ThetaBins = array('d', (20.*TMath.Pi()/180, 30.*TMath.Pi()/180., 40.*TMath.Pi()/180., 50.*TMath.Pi()/180., 60.*TMath.Pi()/180., 70.*TMath.Pi()/180., 90.*TMath.Pi()/180., 110.*TMath.Pi()/180., 120.*TMath.Pi()/180., 130.*TMath.Pi()/180., 140.*TMath.Pi()/180., 150.*TMath.Pi()/180., 160*TMath.Pi()/180))
 ThetaBins = np.linspace(0.175,2.96,30)
@@ -101,11 +101,11 @@ for tbin in range(0, len(ThetaBins)-1):
             avg_ratio = 0
         Elist.append(avg_ratio)
     print("Theta slice ", tbin, " done")
-    print("Starting theta slice ",tbin+1)
+    print("Starting theta slice ",tbin+1,"...")
     corr_matrix.append(Elist)
 
 
 #write calibration map to a csv file
-with open('responseMap_BIBPFOs_reco.csv', 'w', newline = '') as csvfile:
+with open('responseMap_v2_BIB_cc.csv', 'w', newline = '') as csvfile:
     mapwriter = csv.writer(csvfile)
     mapwriter.writerows(corr_matrix)
