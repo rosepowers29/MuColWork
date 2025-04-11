@@ -1,3 +1,6 @@
 [submodule "TauRecoDev"]
 	path = TauRecoDev
 	url = git@github.com:rosepowers88/MuColDev.git
+[submodule "EventDisplayMAIA"]
+	path = EventDisplayMAIA
+	url = ./EventDisplayMAIA/
