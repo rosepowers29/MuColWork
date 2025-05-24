@@ -201,10 +201,6 @@ for Ebin in range(0, len(EBins)-1):
             #print((E_corr - E_truth)/E_truth)
             if (E_corr - E_truth)/E_truth > neg_lim and (E_corr - E_truth)/E_truth < pos_lim:
                 h_my_proj_2.Fill((E_corr - E_truth)/E_truth)
-                if (E_corr-E_truth)/E_truth < -0.4:
-                    lowE_ratio.append(E_corr/E_truth)
-                else:
-                    highE_ratio.append(E_corr/E_truth)
     #now start fitting the gaussians
     
     lim = 0.0
