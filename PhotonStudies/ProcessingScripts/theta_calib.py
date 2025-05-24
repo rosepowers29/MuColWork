@@ -20,6 +20,8 @@ import pandas as pd
 import mplhep as hep
 from scipy.stats import crystalball
 import scipy as scp
+from matplotlib.ticker import (MultipleLocator, AutoMinorLocator)
+
 
 parser= OptionParser()
 parser.add_option("-m", "--inFile_0_50_10T", dest='inFile_0_50_10T',
@@ -85,7 +87,7 @@ mu_arr_th_err = array('d')
 files = [fFile_0_50, fFile_50_250, fFile_250_1000]#, fFile_250_1000_2]
 
 
-with open('responseMap_photons_newregions_noBIB.csv', 'r') as csvToRead:
+with open('../ResponseMaps/responseMap_neutrons_noBIB.csv', 'r') as csvToRead:
     calibmap=csv.reader(csvToRead)
     corr_matrix = list(calibmap)
 csvToRead.close()
@@ -102,23 +104,8 @@ for thetaSlice in corr_matrix:
 
 
 ################### RESOLUTION STUDY #################
-profile=[]
-stdevs = []
 cx = TCanvas("", "", 800, 600)
 gStyle.SetOptStat(1)
-ratios=[]
-bad_dRs = []
-peak_dRs = []
-bad_nPFO = []
-peak_nPFO = []
-badthetas = []
-goodthetas = []
-goodresponse = []
-badresponse = []
-goodphis=[]
-badphis=[]
-goodEreco=[]
-badEreco=[]
 for Ebin in range(0, len(EBins)-1):
     #ratios=[]
     if region == 'th':
@@ -127,20 +114,25 @@ for Ebin in range(0, len(EBins)-1):
     EMax = EBins[Ebin+1]
     proj_name = "E reso, "+str(EBins[Ebin])+"<E<"+str(EBins[Ebin+1])
     file_name = "Ereso"+str(Ebin)
-    if EMin < 100:
-        h_my_proj_2 = TH1D(proj_name, proj_name, 70, -10., 10.)
-    elif 100<= EMin < 200:
-        h_my_proj_2 = TH1D(proj_name, proj_name, 70, -5., 5.)
-    elif 200<= EMin < 500.:
-        h_my_proj_2 = TH1D(proj_name, proj_name, 50, -1.,1.)
+    if EMin < 50:
+        lim = 1.
+        bins = 75
+    elif 50<= EMin <= 200:
+        lim = 2.
+        bins = 70
+    elif 200< EMin < 500.:
+        lim = 1.5
+        bins = 50
     else:
-        h_my_proj_2 = TH1D(proj_name, proj_name, 50, -1. ,1.)
+        lim = 1.
+        bins = 50
 
+    h_my_proj_2 = TH1D(proj_name, proj_name, bins, -lim, lim)
 
     for file in files:
         #tree = file.Get("jet_tree")
-        tree = file.Get("photon_tree")
-        #tree = file.Get("neutron_tree")
+        #tree = file.Get("photon_tree")
+        tree = file.Get("neutron_tree")
         for entry in tree:
             E_truth = entry.E_truth #entry.photon_E
             if E_truth < EMin or E_truth > EMax:
@@ -174,17 +166,17 @@ for Ebin in range(0, len(EBins)-1):
             elif region == 'tb':
                 if theta < 0.6899 or theta > 2.45:
                     continue
-
-            #cut out nozzles
-            #if theta < 0.18 or theta > 2.96:
-            #    continue
+            #all-inclusive
+            elif region == 'a':
+                if theta < 0.18 or theta > 2.96:
+                   continue
             #get rid of weird theta values
             if theta_reco < 0:
                 continue
             # get rid of negative energy values, restrict range
             if E_reco < 10.:
                 continue
-
+            
             for tbin in range(0, len(ThetaBins)-1):
                 ThMin = ThetaBins[tbin]
                 ThMax = ThetaBins[tbin+1]
@@ -202,55 +194,22 @@ for Ebin in range(0, len(EBins)-1):
                                 E_corr = E_reco * corr
                             else:
                                 print(corr)
-                        #isolate the peak of the distribution so we can fit a Gaussian
-                        #BIB limits
+                    
                         
-            if 30. == EMin:
-                neg_lim = -20.
-                pos_lim = 20.
-            #elif 300. <= EMin < 1000.:
-            #    neg_lim = -1.
-            #    pos_lim = 1.
-            else:
-                neg_lim = -10.
-                pos_lim = 10.
-                        
-            #neg_lim = -10.
-            #pos_lim = 10.
+            neg_lim = -10.
+            pos_lim = 10.
             #print((E_corr - E_truth)/E_truth)
             if (E_corr - E_truth)/E_truth > neg_lim and (E_corr - E_truth)/E_truth < pos_lim:
                 h_my_proj_2.Fill((E_corr - E_truth)/E_truth)
-                if EMin == 30:
-                    if -0.6 < (E_corr-E_truth)/E_truth < -0.2:
-                        bad_dRs.append(dR_reco_true)
-                        badthetas.append(theta_reco)
-                        badresponse.append(E_truth/E_reco)
-                        badphis.append(phi_reco)
-                        badEreco.append(E_reco)
-                    else:
-                        goodthetas.append(theta_reco)
-                        goodresponse.append(E_truth/E_reco)
-                        peak_dRs.append(dR_reco_true)
-                        goodphis.append(phi_reco)
-                        goodEreco.append(E_reco)
-                if EMin <= 150:
-                    h_response_profile_E.Fill(E_truth, (E_truth)/E_reco)
-                    ratios.append(E_truth/E_reco)
-
+                if (E_corr-E_truth)/E_truth < -0.4:
+                    lowE_ratio.append(E_corr/E_truth)
+                else:
+                    highE_ratio.append(E_corr/E_truth)
     #now start fitting the gaussians
     
     lim = 0.0
     if EMin<50000:
-        if EMin<400:
-            gaussFit1 = TF1("gaussfit", "gaus", -1., 1.)
-        #else:
-        #    gaussFit1 = TF1("gaussfit", "gaus", -1., -0.8)
-        #elif EMin>700:
-        #    gaussFit1 = TF1("gaussfit", "gaus", -.02, 0.01)   
-        elif EMin == 300:
-            gaussFit1 = TF1("gaussfit", "gaus", -1., 0.02)
-        else:
-            gaussFit1 = TF1("gaussfit", "gaus", -0.1, 0.1)
+        gaussFit1 = TF1("gaussfit", "gaus", -1., 1.)
         gaussFit1.SetLineColor(kRed)
         gaussFit1.SetParameter(1, 0.)
         gaussFit1.SetParameter(2, h_my_proj_2.GetRMS())
@@ -259,7 +218,7 @@ for Ebin in range(0, len(EBins)-1):
         h_my_proj_2.Draw("HIST")
         gaussFit1.Draw("LSAME")
         cx.Update()
-        cx.SaveAs("slices_corr_full"+file_name+".root")
+        #cx.SaveAs("slices_corr_full"+file_name+".root")
         sigma = gaussFit1.GetParameter(2)
         sigma_err = gaussFit1.GetParError(2)
         bincenter = (EMax-EMin)/2
@@ -271,9 +230,6 @@ for Ebin in range(0, len(EBins)-1):
         print("SIGMA=",sigma)
         #print(h1_reso_E.GetBinCenter(bin+1))
         sigma_err_arr.append(sigma_err)
-
-
-'''
 # theta scan
 if region == 'th':
 
@@ -336,14 +292,7 @@ if region == 'th':
         #now start fitting the gaussians
         lim = 0.0
         if EMin<10000:
-            if EMin<400:
-                gaussFit1 = TF1("gaussfit", "gaus", -1., 1.)
-            #else:
-            #   gaussFit1 = TF1("gaussfit", "gaus", -1., -0.8)
-            #elif EMin>700:
-            #    gaussFit1 = TF1("gaussfit", "gaus", -.02, 0.02)   
-            else:
-                gaussFit1 = TF1("gaussfit", "gaus", -1., 1.)
+            gaussFit1 = TF1("gaussfit", "gaus", -1., 1.)
             gaussFit1.SetLineColor(kRed)
             gaussFit1.SetParameter(1, 0.)
             gaussFit1.SetParameter(2, h_my_proj_2.GetRMS())
@@ -366,9 +315,9 @@ if region == 'th':
             sigma_err_arr.append(sigma_err)
 
 
-'''
+
 #save arrays to a csv for easy access
 res_info_noBIB = pd.DataFrame({'E': e_arr, 'sigma': sigma_arr, 'E_err': e_err_arr, 'sigma_err': sigma_err_arr})
-res_info_noBIB.to_csv("ccBIB_v2_resarrays_photons_"+region+".csv")
+res_info_noBIB.to_csv("../ResArrays/noBIB_v2_resarrays_neutrons_"+region+".csv")
 #change from noBIB to BIB and vice versa depending on case
 
